@@ -1,0 +1,29 @@
+IMPORTANT FEATURES:
+
+    1- Scrolling frame
+    2- Signal working + function attachment (see about attach using decorator)
+    3- Set up tag + collection service "like"
+    4- Make the main handler + initiator
+
+FEATURE CHECK LIST:
+
+    //All component at 100% may be changed
+    COMPONENT:
+
+    - Text Button -> 100%
+    - Image Button -> 0%
+    - Text Label -> 100%
+    - Image Label -> 0%
+    - Frame -> 100%
+    - Scrolling Frame -> 0%
+
+    OBJECT ATTRIBUTE:
+    - Ui_Corner
+    - Ui Grid Layout
+    - Ui List Layout
+    - Ui Size Constraint
+    - Ui Text Size Constraint
+
+    OTHER:
+    - Think about more decorator methode
+    - See about optimisation

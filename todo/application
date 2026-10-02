@@ -1,0 +1,127 @@
+core/Application.py : la classe Application, v1 stable
+
+Rôle : point d'entrée unique de la lib. Elle possède la fenêtre, la racine de l'interface et
+la boucle principale. L'utilisateur crée une Application, y ajoute ses widgets, puis appelle run().
+
+    app = Application("Ever Oasis Studio", Size=(1280, 720))
+    app.Root.AddChild(frame)
+    app.run()
+
+
+À corriger dans le code actuel
+- [ ] run() : pygame.display.set_mode renvoie une Surface, pas une fenêtre. Surface n'a pas d'attribut
+      title, donc self.Window.title = ... plante. Passer à pygame.Window (pygame-ce) :
+      self.Window = pygame.Window(self.Title, self.Size, resizable=True) et self.Screen = self.Window.get_surface().
+- [ ] Retirer SCALED des options : il fige une résolution logique et étire l'image. C'est fait pour un jeu,
+      pas pour un IDE dont la mise en page doit suivre la taille de la fenêtre.
+- [ ] VSync et Depth : inutiles avec pygame.Window (VSync ne marche qu'avec SCALED ou OPENGL, Depth doit rester à 0).
+- [ ] BackGroundColor3 → BackgroundColor3 (même nom que les widgets).
+- [ ] Appliquer **props à la fin de __init__, avec le garde-fou hasattr (même mécanisme que les widgets).
+
+
+Étape 1 : la fenêtre
+
+Création et propriétés
+- [ ] Toutes les propriétés sont mémorisées avant run() et appliquées à la création de la fenêtre :
+      Title, Size, MinimumSize, Position, Resizable, Display (écran), Icon.
+- [ ] Chaque setter applique aussi la valeur tout de suite si la fenêtre existe déjà (comme setTitle).
+- [ ] MinimumSize par défaut (ex. 800×600) : empêche de casser la mise en page de l'IDE.
+- [ ] Icône de la fenêtre : Window.set_icon(surface).
+
+État de la fenêtre
+- [ ] Propriété en lecture seule AbsoluteSize (taille actuelle de la surface), mise à jour au redimensionnement.
+- [ ] Signaux : Resized(size), FocusGained, FocusLost, MouseEnteredWindow, MouseLeftWindow.
+- [ ] Au redimensionnement : récupérer la nouvelle surface (Window.get_surface()), marquer Root comme dirty,
+      émettre Resized, demander un redessin.
+
+
+Étape 2 : la racine et les couches
+
+- [ ] Root : un GuiObject qui couvre toute la fenêtre (Size = Udim2(1, 0, 1, 0)).
+      Ses enfants calculent leur taille à partir de lui, plus besoin de pygame.display.get_surface() dans GuiObject.
+- [ ] Couches ordonnées sous Root (équivalent du DisplayOrder des ScreenGui) :
+      Main → Popups (menus contextuels) → Modals → Tooltips.
+      Accès : app.Root, app.Popups, app.Modals, app.Tooltips.
+- [ ] Le dessin parcourt les couches dans cet ordre, la détection de la souris dans l'ordre inverse.
+
+
+Étape 3 : la boucle principale
+
+Structure de run()
+- [ ] pygame.init() → création de la fenêtre → Started.Fire() → boucle → Closing → pygame.quit().
+- [ ] Chaque tour de boucle :
+      1. lire les événements et les passer au UserInputService ;
+      2. exécuter les minuteries arrivées à échéance (Delay) ;
+      3. émettre Heartbeat(dt) et appeler Root.Update(dt) ;
+      4. dessiner seulement si quelque chose a changé ;
+      5. Window.flip().
+- [ ] dt calculé avec Clock.tick(), en secondes.
+
+Économie de CPU (indispensable pour un IDE)
+- [ ] Méthode RequestRedraw() : un widget qui change demande un redessin. Rien de demandé → pas de dessin.
+- [ ] Attente bloquante : pygame.event.wait(timeout) au lieu de tourner en continu.
+      timeout = échéance de la prochaine minuterie, ou plus si rien n'est prévu.
+      Objectif : ~0 % de CPU quand l'utilisateur ne fait rien.
+- [ ] Mode « animation » : tant qu'au moins une animation est en cours, revenir à une boucle à 60 FPS (MaxFPS),
+      puis repasser en attente quand elle se termine.
+- [ ] Propriété MaxFPS (défaut 60).
+
+Minuteries (équivalent de task.delay)
+- [ ] Delay(secondes, fonction) → renvoie un objet annulable (Cancel()).
+- [ ] Every(secondes, fonction) pour les répétitions (clignotement du curseur de texte, 500 ms).
+- [ ] Stockées triées par échéance (module heapq), la plus proche donne le timeout de event.wait.
+
+
+Étape 4 : fermeture
+
+- [ ] QUIT (croix de la fenêtre) → émettre CloseRequested. Si un callback appelle CancelClose(),
+      la fenêtre reste ouverte (utilisé pour « fichier non sauvegardé, quitter quand même ? »).
+- [ ] Quit() : demande d'arrêt propre depuis le code (menu Fichier → Quitter).
+- [ ] Closing émis juste avant pygame.quit() : sauvegarde de l'état, arrêt des threads.
+- [ ] pygame.quit() toujours appelé, même si une exception remonte (try/finally).
+
+
+Étape 5 : intégration des services
+
+- [ ] L'Application crée le UserInputService et lui donne Root : app.UserInputService.
+- [ ] Événements de fenêtre transmis au service : WINDOWLEAVE, WINDOWFOCUSLOST (relâcher la capture
+      et vider les touches enfoncées), DROPFILE.
+- [ ] Une seule Application active à la fois : Application.Current (pratique pour qu'un widget appelle
+      RequestRedraw() ou Delay() sans qu'on lui passe l'application).
+
+
+Étape 6 : tâches en arrière-plan
+
+Pour lancer workspace.sh, la décompilation ou le build sans bloquer l'interface.
+- [ ] RunInThread(fonction, onDone) : exécute la fonction dans un thread, puis appelle onDone(résultat)
+      dans le thread principal.
+- [ ] Retour au thread principal via pygame.event.post avec un type d'événement personnalisé
+      (pygame.event.custom_type()). Ne jamais toucher aux widgets depuis un autre thread.
+- [ ] Les exceptions du thread sont transmises à onDone (ou affichées), jamais perdues.
+
+
+Étape 7 : robustesse et débogage
+
+- [ ] Exception dans un callback (signal, minuterie, Update) : afficher la trace et continuer,
+      ne pas fermer l'application (comportement Roblox).
+- [ ] Mode Debug : affichage des FPS, du nombre de redessins, et contour de l'objet sous la souris.
+- [ ] Raccourci de debug (F12) pour activer ou couper ce mode.
+
+
+Étape 8 : test
+
+examples/app_demo.py, avec un cas par fonctionnalité :
+- [ ] Changer le titre avant et après run().
+- [ ] Redimensionner : la mise en page suit, la taille minimale est respectée.
+- [ ] Inactif : le CPU tombe à ~0 % (vérifier avec top).
+- [ ] Delay et Every : un label qui change après 2 s, un autre qui clignote.
+- [ ] Croix de fermeture avec une confirmation, puis CancelClose.
+- [ ] Une tâche longue (time.sleep(3) dans un thread) : l'interface reste réactive pendant ce temps.
+- [ ] Une exception volontaire dans un callback : elle s'affiche, l'application continue.
+
+
+Plus tard (pas nécessaire pour la v1)
+- [ ] Plusieurs fenêtres (panneaux détachables).
+- [ ] Sauvegarde de l'état de la fenêtre (taille, position, écran) dans un JSON.
+- [ ] Thèmes : couleurs partagées gérées par l'Application, changement clair/sombre à chaud.
+- [ ] Mise à l'échelle HiDPI.

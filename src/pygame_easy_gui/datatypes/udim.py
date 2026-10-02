@@ -1,4 +1,6 @@
-from Utils.ArgumentsVerifier import ArgumentVerifier, NUMBER, Verify
+from __future__ import annotations
+
+from ..utils.argument_verifier import ArgumentVerifier, NUMBER, Verify
 
 
 DEBUG = True
@@ -150,9 +152,3 @@ class Udim2:
 
     def __repr__(self):
         return f"({self.X}, {self.Y})"
-
-Udim1 = Udim(10, 10)
-Udim2bis = Udim(10, 10)
-
-Udim3 = Udim1 + Udim2bis
-print(Udim3 * 10)

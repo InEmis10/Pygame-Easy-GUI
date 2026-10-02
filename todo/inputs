@@ -1,0 +1,154 @@
+core/input_object.py : les types de base
+- [X] Enum UserInputType : MouseButton1, MouseButton2, MouseButton3, MouseMovement, MouseWheel, Keyboard, TextInput.
+- [X] Enum UserInputState : Begin, Change, End, Cancel.
+- [X] Classe InputObject avec les champs suivants :
+  - UserInputType, UserInputState, KeyCode ;
+  - Position, Delta ;
+  - Modifiers (Ctrl, Shift, Alt, sans AltGr) ;
+  - ClickCount, Text ;
+  - Handled (mis à True par l'objet qui consomme l'événement).
+
+core/gui_object.py : ce que chaque objet doit savoir faire
+- [ ] Les signaux InputBegan, InputChanged, InputEnded.
+- [ ] Les propriétés Active (bloque l'entrée, comme dans Roblox) et Interactable.
+- [ ] Une fonction unique qui donne l'ordre des enfants (ZIndex, puis ordre d'ajout). Draw l'utilise dans un sens, la détection dans l'autre.
+- [ ] ClipsDescendants : le dessin découpé avec set_clip, et les enfants non cliquables hors de la zone.
+- [ ] IsDescendantOf() et IsInTree(), pour vérifier qu'un objet existe toujours avant de lui envoyer un signal.
+
+Étape 2 : le service central
+
+core/input_service.py : UserInputService, le seul à lire les événements pygame
+- [ ] ProcessEvent(event), qui oriente chaque événement pygame vers le bon traitement.
+- [ ] Ignorer MOUSEBUTTONDOWN des boutons 4 et 5 (l'ancienne molette), sinon chaque cran compte double.
+- [ ] Le signal global InputBegan(input, processedByGui), qui servira aux raccourcis.
+- [ ] Une copie des listes avant d'émettre un signal, et un try/except autour de chaque callback : afficher l'erreur, ne pas planter.
+
+Détection de l'objet sous la souris
+- [ ] GetGuiObjectsAtPosition(x, y) :
+  - parcours inverse du rendu ;
+  - ignore les objets avec Visible = False et ce qui est hors d'un ClipsDescendants ;
+  - s'arrête au premier objet Active.
+- [ ] Le même GetRect() pour le dessin et la détection.
+- [ ] Recalculer après un changement de l'arbre, un défilement ou un redimensionnement, en rejouant un mouvement de souris fictif.
+
+Étape 3 : la souris
+
+Survol
+- [ ] L'ensemble des objets survolés, comparé à l'ensemble précédent, déclenche MouseEnter et MouseLeave. Ajouter MouseMoved.
+- [ ] Un objet caché ou détruit pendant le survol reçoit un MouseLeave. WINDOWLEAVE vide tout l'ensemble.
+- [ ] La propriété Cursor ("arrow", "hand", "ibeam", "sizewe", "sizens"), appliquée seulement quand elle change.
+
+Boutons (widgets/gui_button.py, dont TextButton héritera)
+- [ ] MouseButton1Down, MouseButton1Up, MouseButton1Click, et les mêmes en MouseButton2.
+- [ ] Le clic n'est émis que si l'appui et le relâchement ont lieu sur le même objet.
+- [ ] Activated : un clic, ou Entrée/Espace si le bouton a le focus.
+- [ ] ClickCount pour le double et le triple clic : ≤ 400 ms entre les clics, même objet, ≤ 4 px de déplacement.
+- [ ] Les états _Hovering et _Pressed, et AutoButtonColor.
+
+Capture et glisser
+- [ ] Quand on appuie sur un objet, il capture la souris : il reçoit tout jusqu'au relâchement, même hors de son rectangle.
+- [ ] Seuil de 4 px : en dessous c'est un clic, au-delà un glisser, et dans ce cas pas de Click.
+- [ ] Les signaux DragBegin, DragMove(pos, delta), DragEnd.
+- [ ] La capture est relâchée sur WINDOWFOCUSLOST, si l'objet est détruit, ou sur Échap (annulation).
+
+Molette
+- [ ] L'événement va à l'objet le plus profond sous la souris et remonte aux parents tant que Handled vaut False.
+- [ ] Shift+molette défile horizontalement. Utiliser precise_x et precise_y.
+
+Étape 4 : le clavier
+
+Focus
+- [ ] FocusedObject global, CaptureFocus(), ReleaseFocus(), et les signaux Focused et FocusLost(enterPressed).
+- [ ] Un clic sur un objet qui accepte le focus le lui donne ; un clic ailleurs le retire. Si l'objet est caché ou détruit, le focus est effacé.
+- [ ] Ordre de traitement d'une touche :
+  a. les raccourcis avec Ctrl ou Alt ;
+  b. l'objet qui a le focus, puis ses parents s'il ne la traite pas ;
+  c. sinon la touche est ignorée.
+- [ ] AltGr (KMOD_RALT ou KMOD_MODE) n'est jamais un raccourci, pour que @ { [ # | restent tapables en AZERTY.
+- [ ] pygame.key.set_repeat(400, 30).
+- [ ] Vider l'état des touches enfoncées sur WINDOWFOCUSLOST.
+
+Texte
+- [ ] start_text_input() et stop_text_input() quand le focus arrive et part.
+- [ ] Insérer le texte uniquement depuis TEXTINPUT. KEYDOWN sert seulement aux touches de contrôle (flèches, retour arrière, Suppr, Entrée, Tab, Origine/Fin).
+
+Étape 5 : la démo de test
+
+examples/input_demo.py, avec un cas par fonctionnalité :
+- deux boutons superposés : le bon reçoit le clic ;
+- une Frame avec Active = False posée sur un bouton : le clic passe à travers ;
+- un enfant hors d'une Frame en ClipsDescendants : il n'est pas cliquable ;
+- simple, double et triple clic affichés ;
+- un carré qu'on déplace en glissant ;
+- MouseEnter et MouseLeave qui changent la couleur ;
+- un champ de saisie minimal : é, ê et AltGr+0 → @.
+
+Plus tard
+
+Ces points ne sont pas nécessaires pour avancer :
+- le presse-papier (pygame.scrap, avec repli sur wl-copy/xclip) ;
+- les couches, fenêtres modales et menus contextuels (un clic à l'extérieur ferme et est consommé) ;
+- le planificateur Delay() avec une boucle event.wait(timeout), pour les infobulles et le clignotement du curseur de texte ;
+- le passage au champ suivant avec Tab, TEXTEDITING et DROPFILE.
+
+Dis-moi si tu veux que je code une étape, ou si tu préfères l'écrire toi-même et que je relise ensuite.
+
+✻ Cogitated for 26s · done 11:43
+
+❯ Nom    Valeur    Résumé
+  MouseButton1    0
+
+- [ ] Le même GetRect() pour le dessin et la détection.
+- [ ] Recalculer après un changement de l'arbre, un défilement ou un redimensionnement, en rejouant un mouvement de souris fictif.
+
+Étape 3 : la souris
+
+Survol
+- [ ] L'ensemble des objets survolés, comparé à l'ensemble précédent, déclenche MouseEnter et MouseLeave. Ajouter MouseMoved.
+- [ ] Un objet caché ou détruit pendant le survol reçoit un MouseLeave. WINDOWLEAVE vide tout l'ensemble.
+- [ ] La propriété Cursor ("arrow", "hand", "ibeam", "sizewe", "sizens"), appliquée seulement quand elle change.
+
+Boutons (widgets/gui_button.py, dont TextButton héritera)
+- [ ] MouseButton1Down, MouseButton1Up, MouseButton1Click, et les mêmes en MouseButton2.
+- [ ] Le clic n'est émis que si l'appui et le relâchement ont lieu sur le même objet.
+- [ ] Activated : un clic, ou Entrée/Espace si le bouton a le focus.
+- [ ] ClickCount pour le double et le triple clic : ≤ 400 ms entre les clics, même objet, ≤ 4 px de déplacement.
+- [ ] Les états _Hovering et _Pressed, et AutoButtonColor.
+
+Capture et glisser
+- [ ] Quand on appuie sur un objet, il capture la souris : il reçoit tout jusqu'au relâchement, même hors de son rectangle.
+- [ ] Seuil de 4 px : en dessous c'est un clic, au-delà un glisser, et dans ce cas pas de Click.
+- [ ] Les signaux DragBegin, DragMove(pos, delta), DragEnd.
+- [ ] La capture est relâchée sur WINDOWFOCUSLOST, si l'objet est détruit, ou sur Échap (annulation).
+
+Molette
+- [ ] L'événement va à l'objet le plus profond sous la souris et remonte aux parents tant que Handled vaut False.
+- [ ] Shift+molette défile horizontalement. Utiliser precise_x et precise_y.
+
+Étape 4 : le clavier
+
+Focus
+- [ ] FocusedObject global, CaptureFocus(), ReleaseFocus(), et les signaux Focused et FocusLost(enterPressed).
+- [ ] Un clic sur un objet qui accepte le focus le lui donne ; un clic ailleurs le retire. Si l'objet est caché ou détruit, le focus est effacé.
+- [ ] Ordre de traitement d'une touche :
+  a. les raccourcis avec Ctrl ou Alt ;
+  b. l'objet qui a le focus, puis ses parents s'il ne la traite pas ;
+  c. sinon la touche est ignorée.
+- [ ] AltGr (KMOD_RALT ou KMOD_MODE) n'est jamais un raccourci, pour que @ { [ # | restent tapables en AZERTY.
+- [ ] pygame.key.set_repeat(400, 30).
+- [ ] Vider l'état des touches enfoncées sur WINDOWFOCUSLOST.
+
+Texte
+- [ ] start_text_input() et stop_text_input() quand le focus arrive et part.
+- [ ] Insérer le texte uniquement depuis TEXTINPUT. KEYDOWN sert seulement aux touches de contrôle (flèches, retour arrière, Suppr, Entrée, Tab, Origine/Fin).
+
+Étape 5 : la démo de test
+
+examples/input_demo.py, avec un cas par fonctionnalité :
+- deux boutons superposés : le bon reçoit le clic ;
+- une Frame avec Active = False posée sur un bouton : le clic passe à travers ;
+- un enfant hors d'une Frame en ClipsDescendants : il n'est pas cliquable ;
+- simple, double et triple clic affichés ;
+- un carré qu'on déplace en glissant ;
+- MouseEnter et MouseLeave qui changent la couleur ;
+- un champ de saisie minimal : é, ê et AltGr+0 → @.

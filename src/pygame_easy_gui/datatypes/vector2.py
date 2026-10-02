@@ -1,4 +1,6 @@
-from Utils.ArgumentsVerifier import *
+from __future__ import annotations
+
+from ..utils.argument_verifier import ArgumentVerifier, Verify
 
 ##TODO: check if we need update methode, value change methode and more arithmetique methode !!!
 

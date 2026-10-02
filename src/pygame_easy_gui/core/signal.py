@@ -1,3 +1,5 @@
+
+##Create a connexion
 class Connection:
     def __init__(self, signal: "Signal", callback):
         self._signal = signal
@@ -10,7 +12,12 @@ class Connection:
             if self in self._signal._connections:
                 self._signal._connections.remove(self)
 
+    def __call__(self, *args, **kwargs):
+        # Après `@signal.Connect` (ou `@signal`), le nom de la fonction désigne la Connection :
+        # elle reste appelable comme la fonction d'origine.
+        return self._callback(*args, **kwargs)
 
+##Create a signal
 class Signal:
     def __init__(self):
         self._connections: list[Connection] = []
@@ -39,3 +46,7 @@ class Signal:
     def DisconnectAll(self):
         for conn in list(self._connections):
             conn.Disconnect()
+
+    def __call__(self, callback) -> Connection:
+        """Permet d'utiliser le signal comme décorateur : @button.MouseButton1Click"""
+        return self.Connect(callback)

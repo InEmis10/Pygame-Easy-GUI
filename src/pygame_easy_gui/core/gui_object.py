@@ -1,13 +1,20 @@
-from Object.GuiAttribute.Udim import Udim2
-from Object.GuiAttribute.Vector2 import  Vector2
+from __future__ import annotations
+
 import pygame
+
+from ..datatypes.udim import Udim2
+from ..datatypes.vector2 import Vector2
+from .mixins.attribute_mixin import AttributeMixin
+from .signal import Signal
 
 
 ##TODO: 1- check if we can make event or check access to Position or Size to OnChange update the dirty state
 
 
-class GuiObject:
-    def __init__(self):
+class GuiObject(AttributeMixin):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
         self.Name = "GuiObject"
         self.Parent : "GuiObject | None"= None
         self.Children : list[GuiObject] = []
@@ -22,6 +29,7 @@ class GuiObject:
         self._dirty = True
         self._abs_pos = pygame.Vector2(0, 0)
         self._abs_size = pygame.Vector2(0, 0)
+        self._CustomEvent : dict[str, Signal] = {}
 
     def AddChild(self, child : GuiObject):
         child.Parent = self
@@ -52,8 +60,16 @@ class GuiObject:
     def _GetParentAbsSize(self) -> pygame.Vector2:
         if self.Parent is not None:
             return self.Parent.GetAbsSize()
-        surface = pygame.display.get_surface()
-        return pygame.Vector2(surface.get_size())
+        # Racine (ScreenGui) : taille de la fenêtre de l'Application. Avec pygame.Window,
+        # pygame.display.get_surface() renvoie None, d'où ce passage par Application.Current.
+        from .Application import Application    # dans la fonction : Application importe gui_object
+        app = Application.Current
+        if app is not None and app.Surface is not None:
+            return pygame.Vector2(app.Surface.get_size())
+        surface = pygame.display.get_surface()  # repli : boucle maison avec display.set_mode
+        if surface is not None:
+            return pygame.Vector2(surface.get_size())
+        return pygame.Vector2(0, 0)
 
     def _Recompute(self):
         ParentSize = self._GetParentAbsSize()
@@ -103,6 +119,29 @@ class GuiObject:
         self._Draw(Surface)
         for c in self.Children:
             c.Draw(Surface)
+
+    def GetSignal(self, name : str) -> (Signal | None):
+        """Récupère un signal custom depuis : self._CustomEvent et return si l'event est valide"""
+        if name in self._CustomEvent:
+            return self._CustomEvent[name]
+        return None
+
+    @classmethod
+    def New(cls, Parent: "GuiObject | None" = None, **kwargs) -> "GuiObject":
+        """Crée l'objet, applique les propriétés et le range dans Parent (comme Instance.new).
+
+            button = TextButton.New(frame, Name="PlayButton", Text="Jouer")
+        """
+        obj = cls()
+        for key, value in kwargs.items():
+            if key.startswith("_") or not hasattr(obj, key):
+                raise AttributeError(f"'{cls.__name__}' n'a pas de propriété '{key}'")
+            setattr(obj, key, value)
+
+        if Parent is not None:
+            Parent.AddChild(obj)
+
+        return obj
 
     ## Override with object
     def _Update(self, dt: float):

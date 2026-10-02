@@ -1,6 +1,5 @@
 import pygame
-from Object.GuiObject import GuiObject
-
+from ..core.gui_object import GuiObject
 
 class Frame(GuiObject):
     def __init__(self):

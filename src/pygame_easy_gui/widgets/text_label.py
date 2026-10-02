@@ -1,7 +1,6 @@
-from pygame import surface
-
-from Object.GuiObject import GuiObject
 import pygame
+
+from ..core.gui_object import GuiObject
 
 ##TODO : 1 - Make the class Color3
 
