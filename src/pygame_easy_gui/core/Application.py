@@ -130,6 +130,10 @@ class Application(EventHandlerMixin):
     def _OnQuit(self, event):
         self.Running = False
 
+    @OnEvent(pygame.WINDOWEXPOSED)
+    def _OnWindowExposed(self, event):
+        self._NeedsRedraw = True
+
     @OnEvent(pygame.WINDOWRESIZED, pygame.WINDOWSIZECHANGED)
     def _OnResize(self, event):
         self.Surface = self.Window.get_surface()

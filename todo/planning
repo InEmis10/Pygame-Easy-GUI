@@ -27,3 +27,4 @@ FEATURE CHECK LIST:
     OTHER:
     - Think about more decorator methode
     - See about optimisation
+    - Debug trace system : logging par module (getLogger(__name__) + NullHandler), SetDebug(), décorateur @Debug pour tracer les appels, log.exception dans les callbacks, branché sur le mode Debug (F12)

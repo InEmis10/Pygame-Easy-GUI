@@ -14,11 +14,11 @@ from warnings import deprecated
 
 class GuiObject(AttributeMixin):
 
-    Position = Property(Udim2(0, 0, 0, 0), layout=True)
-    Size = Property(Udim2(0, 0, 0, 0), layout=True)
-    AnchorPoint = Property(Vector2(0, 0), layout=True)
-    Visible = Property(True)
-    ZIndex = Property(0)
+    Position = Property(Udim2(0, 0, 0, 0), layout=True, draw=True)
+    Size = Property(Udim2(0, 0, 0, 0), layout=True, draw=True)
+    AnchorPoint = Property(Vector2(0, 0), layout=True, draw=True)
+    Visible = Property(True, layout=False, draw=True)
+    ZIndex = Property(0, layout=False, draw=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -36,12 +36,21 @@ class GuiObject(AttributeMixin):
         self._PropertySignals : dict[str, Signal] = {}
 
     def AddChild(self, child : GuiObject):
+        if child.Parent is not None:
+            child.Parent.RemoveChild(child)
+        from .Application import Application
+        if Application.Current:
+            Application.Current.RequestRedraw()
         child.Parent = self
         child._MarkDirty()
         self.Children.append(child)
         self.Children.sort(key= lambda c: c.ZIndex)
 
+
     def RemoveChild(self, child : GuiObject):
+        from .Application import Application
+        if Application.Current:
+            Application.Current.RequestRedraw()
         if child in self.Children:
             child.Parent = None
             self.Children.remove(child)
@@ -83,10 +92,11 @@ class GuiObject(AttributeMixin):
     def _OnPropertyChanged(self, name: str, layout: bool):
         if layout:
             self._MarkDirty()
-        # plus tard : Application.Current.RequestRedraw()
         self.Changed.Fire(name)
         if name in self._PropertySignals:
             self._PropertySignals[name].Fire()
+        if name == "ZIndex" and self.Parent is not None:
+            self.Parent.Children.sort(key=lambda c: c.ZIndex)
 
     def _Recompute(self):
         ParentSize = self._GetParentAbsSize()

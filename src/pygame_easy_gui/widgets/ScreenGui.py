@@ -1,7 +1,7 @@
 from ..core.GuiObject import GuiObject
 from ..datatypes.udim import Udim2
 from ..datatypes.vector2 import Vector2
-
+from ..core.Property import Property
 
 class ScreenGui(GuiObject):
     """Conteneur qui couvre toute la fenêtre, comme ScreenGui dans Roblox.
@@ -15,12 +15,13 @@ class ScreenGui(GuiObject):
     DisplayOrder : le plus grand est dessiné au-dessus des autres.
     """
 
+    Enabled : bool = Property(True)
+    _DisplayOrder : int = Property(0)
+
     def __init__(self):
         super().__init__()
         self.Name = "ScreenGui"
-        self.Enabled = True
-        self._DisplayOrder = 0
-        self._Service = None                 # _GuiService de l'Application, posé par app.Gui.Add
+        self._Service = None
 
         # Toujours la taille de la fenêtre
         self.Position = Udim2(0, 0, 0, 0)

@@ -19,7 +19,7 @@ class _TextButtonEvent:
 
 class TextButton(TextLabel, _TextButtonEvent):
     AutoButtonColor = Property(True)
-    Active = Property(True)
+    Active = Property(True, draw=False)
 
     def __init__(self):
         super().__init__()
