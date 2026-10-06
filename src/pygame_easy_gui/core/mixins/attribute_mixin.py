@@ -1,5 +1,5 @@
 from ...utils.argument_verifier import Verify, ArgumentVerifier, ANY
-from ..signal import Signal
+from ..Signal import Signal
 
 
 class AttributeMixin:

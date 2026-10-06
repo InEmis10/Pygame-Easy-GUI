@@ -1,7 +1,7 @@
 from ..datatypes.color3 import Color3
-from .signal import Signal
+from .Signal import Signal
 from .mixins.EventHandlerMixin import EventHandlerMixin
-from .decorators import OnEvent
+from .Decorators import OnEvent
 import pygame
 
 # Position spéciale SDL : centrer la fenêtre sur l'écran n (SDL_WINDOWPOS_CENTERED_DISPLAY).
@@ -63,7 +63,7 @@ class Application(EventHandlerMixin):
     Elles sont mémorisées et appliquées à la création de la fenêtre, dans run().
     """
 
-    Current = None
+    Current : "Application" = None
 
     def __init__(self, title : str = "Pygame Easy GUI", **props):
         # ---- Fenêtre : identité
@@ -107,7 +107,10 @@ class Application(EventHandlerMixin):
         self.Gui = _GuiService()                             # app.Gui.Add(screen_gui)
         self.EventManager = None                             # créé dans run()
 
-        # ---- Event
+        # ---- Event Variable
+        self.EventTimeOut = 1
+
+        # ---- Event Signal
         self.Resized = Signal()
         self.FocusLost = Signal()
         self.FocusGained = Signal()
@@ -133,6 +136,7 @@ class Application(EventHandlerMixin):
         self.AbsoluteSize = self.Surface.size
         self.Gui.MarkDirty()
         self.Resized.Fire(self.AbsoluteSize)
+        self.RequestRedraw()
 
     def setTitle(self, string):
         self.Title = string
@@ -174,22 +178,34 @@ class Application(EventHandlerMixin):
     def RequestRedraw(self):
         """Demande un redessin. Pour l'instant on redessine à chaque tour : sera utilisé
         par la boucle optimisée (voir todo/application, étape 3)."""
+        if not Application.Current:
+            return
         self._NeedsRedraw = True
 
     def _Draw(self):
         self.Surface.fill(self.BackgroundColor3.ToPygame())
         self.Gui.Draw(self.Surface)
+        self._NeedsRedraw = False
+
+    def _getEvent(self, delay : int):
+        """Temps en seconde"""
+        if delay < 0:
+            return pygame.event.get()
+        else:
+            first = pygame.event.wait(max(1, int(delay * 1000)))
+            return ([first] if first.type != pygame.NOEVENT else []) + pygame.event.get()
 
     def run(self):
         pygame.init()
         self._CreateWindow()
-        from .event_manager import EventManager    # import dans la fonction : event_manager importe gui_object
+        from .EventManager import EventManager    # import dans la fonction : event_manager importe gui_object
         self.EventManager = EventManager(self.Gui)
         self.Running = True
         Application.Current = self
         try:
             while self.Running:
-                events = pygame.event.get()
+
+                events = self._getEvent(self.EventTimeOut)
                 for event in events:
                     self._HandleEvent(event)
                 self.EventManager.Update(events)
@@ -198,8 +214,9 @@ class Application(EventHandlerMixin):
                 for screen in self.Gui.Children:
                     screen.Update(dt)
 
-                self._Draw()
-                self.Window.flip()
+                if self._NeedsRedraw:
+                    self._Draw()
+                    self.Window.flip()
         finally:
             Application.Current = None
             self.EventManager = None

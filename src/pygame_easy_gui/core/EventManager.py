@@ -1,6 +1,6 @@
 import pygame
 
-from .gui_object import GuiObject
+from .GuiObject import GuiObject
 
 ##ToDo: Make event in different file
 
@@ -17,7 +17,7 @@ class EventManager:
         self._pressed: "TextButton | None" = None
 
     def _CollectButtons(self, obj: GuiObject, out: list):
-        from ..widgets.text_button import TextButton   # dans la fonction : widgets importe core (cycle)
+        from ..widgets.TextButton import TextButton   # dans la fonction : widgets importe core (cycle)
         if not obj.Visible:                            # parent caché → tous ses boutons le sont aussi
             return
         if isinstance(obj, TextButton):

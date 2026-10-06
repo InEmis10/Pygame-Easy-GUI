@@ -1,5 +1,8 @@
-from .text_label import TextLabel
-from ..core.signal import Signal
+from .TextLabel import TextLabel
+from ..core.Signal import Signal
+from ..core.Property import Property
+
+DEFAULT_TEXT_BUTTON_WIDGETS_NAME = "TextButton"
 
 #TODO 1- object must have event override (allow custom creation of event integrate to the TextButtonEvent or may be implementer using Signal object in custom class herite from TextButton
 #TODO 2- Object with may have TextChanged Event
@@ -15,12 +18,13 @@ class _TextButtonEvent:
 
 
 class TextButton(TextLabel, _TextButtonEvent):
+    AutoButtonColor = Property(True)
+    Active = Property(True)
+
     def __init__(self):
         super().__init__()
 
-        self.Name = "TextButton"
-        self.AutoButtonColor = True
-        self.Active = True
+        self.Name = DEFAULT_TEXT_BUTTON_WIDGETS_NAME
 
         self._Hovering = False
         self._Pressed = False

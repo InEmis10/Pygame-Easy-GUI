@@ -7,17 +7,18 @@
 #     DANS la fonction qui en a besoin, `from .Application import Application`. En haut du fichier,
 #     les deux modules s'attendraient l'un l'autre au chargement (import circulaire → ImportError).
 from .Enum import UserInputStates, UserInputType
-from .signal import Connection, Signal
-from .decorators import Connect, OnEvent
+from .Signal import Connection, Signal
+from .Decorators import Connect, OnEvent
 from .mixins import AttributeMixin
 from .InputObject import InputObject
-from .gui_object import GuiObject
-from .event_manager import EventManager
+from .GuiObject import GuiObject
+from .EventManager import EventManager
 from .Application import Application
+from .Property import Property
 
 __all__ = [
     "UserInputStates", "UserInputType",
     "Connection", "Signal", "Connect", "AttributeMixin", "OnEvent",
-    "InputObject", "GuiObject", "EventManager",
+    "InputObject", "GuiObject", "EventManager", "Property",
     "Application",
 ]

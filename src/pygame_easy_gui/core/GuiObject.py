@@ -1,35 +1,39 @@
 from __future__ import annotations
 
 import pygame
-
 from ..datatypes.udim import Udim2
 from ..datatypes.vector2 import Vector2
 from .mixins.attribute_mixin import AttributeMixin
-from .signal import Signal
+from .Signal import Signal
+from .Property import Property
+from warnings import deprecated
 
 
 ##TODO: 1- check if we can make event or check access to Position or Size to OnChange update the dirty state
 
 
 class GuiObject(AttributeMixin):
+
+    Position = Property(Udim2(0, 0, 0, 0), layout=True)
+    Size = Property(Udim2(0, 0, 0, 0), layout=True)
+    AnchorPoint = Property(Vector2(0, 0), layout=True)
+    Visible = Property(True)
+    ZIndex = Property(0)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.Name = "GuiObject"
-        self.Parent : "GuiObject | None"= None
+        self.Parent : "GuiObject | None" = None
         self.Children : list[GuiObject] = []
-
-        self.Position = Udim2(0, 0, 0, 0)
-        self.Size = Udim2(0, 0, 0, 0)
-        self.AnchorPoint = Vector2(0, 0)
-
-        self.Visible = True
-        self.ZIndex = 0
 
         self._dirty = True
         self._abs_pos = pygame.Vector2(0, 0)
         self._abs_size = pygame.Vector2(0, 0)
         self._CustomEvent : dict[str, Signal] = {}
+
+        self.Changed = Signal()
+        self._PropertySignals : dict[str, Signal] = {}
 
     def AddChild(self, child : GuiObject):
         child.Parent = self
@@ -71,6 +75,19 @@ class GuiObject(AttributeMixin):
             return pygame.Vector2(surface.get_size())
         return pygame.Vector2(0, 0)
 
+    def GetPropertyChangedSignal(self, name: str) -> Signal:
+        if not isinstance(getattr(type(self), name, None), Property):
+            raise AttributeError(f"'{type(self).__name__}' n'a pas de propriété '{name}'")
+        return self._PropertySignals.setdefault(name, Signal())
+
+    def _OnPropertyChanged(self, name: str, layout: bool):
+        if layout:
+            self._MarkDirty()
+        # plus tard : Application.Current.RequestRedraw()
+        self.Changed.Fire(name)
+        if name in self._PropertySignals:
+            self._PropertySignals[name].Fire()
+
     def _Recompute(self):
         ParentSize = self._GetParentAbsSize()
         ParentPos = self.Parent.GetAbsPosition() if self.Parent else pygame.Vector2(0, 0)
@@ -98,10 +115,12 @@ class GuiObject(AttributeMixin):
         size = self.GetAbsSize()
         return  pygame.Rect(pos.x, pos.y,size.x, size.y)
 
+    @deprecated("User cls Property() direct reassign instead", category=DeprecationWarning)
     def SetPosition(self, pos : Udim2):
         self.Position = pos
         self._MarkDirty()
 
+    @deprecated("User cls Property() direct reassign instead", category=DeprecationWarning)
     def SetSize(self, size : Udim2):
         self.Size = size
         self._MarkDirty()

@@ -1,4 +1,4 @@
-from ..core.gui_object import GuiObject
+from ..core.GuiObject import GuiObject
 from ..datatypes.udim import Udim2
 from ..datatypes.vector2 import Vector2
 

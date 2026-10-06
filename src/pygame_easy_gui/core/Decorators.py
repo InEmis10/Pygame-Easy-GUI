@@ -1,4 +1,4 @@
-from .signal import Signal
+from .Signal import Signal
 
 def Connect(target : Signal):
     """Connecte la fonction décorée à un signal et la renvoie intacte (elle reste appelable).

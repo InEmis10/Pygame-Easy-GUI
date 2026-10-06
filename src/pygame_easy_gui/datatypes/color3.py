@@ -28,7 +28,7 @@ class Color3:
 
     def ToPygame(self) -> tuple[int, int, int]:
         """Format attendu par pygame (fill, draw.rect, font.render) : tuple d'entiers 0–255."""
-        return (self.R, self.G, self.B)
+        return self.R, self.G, self.B
 
     def __eq__(self, other):
         if not isinstance(other, Color3):
