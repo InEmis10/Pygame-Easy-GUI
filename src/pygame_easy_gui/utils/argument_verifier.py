@@ -1,3 +1,4 @@
+import inspect
 import pathlib
 from functools import wraps
 
@@ -11,13 +12,15 @@ JSON = (dict, list)
 
 """Main class"""
 class ArgumentVerifier:
-    def __init__(self, instanceType, argumentNumber: int):
-        self.InstanceType = instanceType
-        self.ArgumentNumber = argumentNumber
+    def __init__(self, InstanceType, ArgumentNumber: int, AllowEmpty : bool = False):
+        self.InstanceType = InstanceType
+        self.ArgumentNumber = ArgumentNumber
+        self.AllowEmpty = AllowEmpty   # True : un appel sans aucun argument est accepté
 
-        if isinstance(instanceType, list) and len(instanceType) != argumentNumber:
-            self.InstanceType = []
-            self.ArgumentNumber = 0
+        if isinstance(InstanceType, list) and len(InstanceType) != ArgumentNumber:
+            raise ValueError(
+                f"ArgumentVerifier : {len(InstanceType)} types donnés pour {ArgumentNumber} arguments"
+            )
 
     """_resolve_type:
         TYPE : Private methode
@@ -29,14 +32,14 @@ class ArgumentVerifier:
             ArgumentVerifier , e.g. a class who need to check __add__ and who need an other instance of itself while python process the
             class definition.
     """
-    def _resolve_type(self, expected):
-        if isinstance(expected, type):
-            return expected
-        if isinstance(expected, tuple):
-            return expected
-        if callable(expected):
-            return expected()
-        return expected
+    def _resolve_type(self, Expected):
+        if isinstance(Expected, type):
+            return Expected
+        if isinstance(Expected, tuple):
+            return Expected
+        if callable(Expected):
+            return Expected()
+        return Expected
 
     """Verifier :
         TYPE : Methode
@@ -48,34 +51,51 @@ class ArgumentVerifier:
             3 - Return true if all values valid, false if not
     """
     def Verifier(self, *args) -> bool:
+        if len(args) == 0 and self.AllowEmpty:
+            return True
         if len(args) != self.ArgumentNumber:
             return False
         if isinstance(self.InstanceType, list):
-            for target, expected in zip(args, self.InstanceType):
-                expected = self._resolve_type(expected)
-                if expected is object:
+            for Target, Expected in zip(args, self.InstanceType):
+                Expected = self._resolve_type(Expected)
+                if Expected is object:
                     continue
-                if not isinstance(target, expected):
+                if not isinstance(Target, Expected):
                     return False
         else:
-            expected = self._resolve_type(self.InstanceType)
-            for target in args:
-                if expected is object:
+            Expected = self._resolve_type(self.InstanceType)
+            for Target in args:
+                if Expected is object:
                     continue
-                if not isinstance(target, expected):
+                if not isinstance(Target, Expected):
                     return False
 
         return True
 
-"""Decorator"""
-def Verify(verifier):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if not verifier.Verifier(*args[1:]):
+"""Decorator :
+    Les arguments sont liés à la signature de la fonction (valeurs par défaut et kwargs inclus)
+    avant d'être vérifiés. Le premier argument (self / cls) est ignoré.
+    Si DEBUG est False, la fonction n'est pas wrappée (aucun coût à l'exécution).
+"""
+def Verify(Verifier):
+    def Decorator(Func):
+        if not DEBUG:
+            return Func
+        # Signature résolue au premier appel : à la décoration, les annotations
+        # peuvent encore référencer la classe en cours de définition (ex: Other: Udim)
+        Cache = {}
+
+        @wraps(Func)
+        def Wrapper(*args, **kwargs):
+            if "Signature" not in Cache:
+                Cache["Signature"] = inspect.signature(Func)
+            Bound = Cache["Signature"].bind(*args, **kwargs)
+            Bound.apply_defaults()
+            Values = list(Bound.arguments.values())[1:]
+            if not Verifier.Verifier(*Values):
                 raise TypeError(
-                    f"Arguments invalides pour {func.__name__}"
+                    f"Arguments invalides pour {Func.__name__}"
                 )
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+            return Func(*args, **kwargs)
+        return Wrapper
+    return Decorator

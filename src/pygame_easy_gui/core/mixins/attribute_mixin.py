@@ -1,56 +1,56 @@
-from ...utils.argument_verifier import Verify, ArgumentVerifier, ANY
-from ..Signal import Signal
+from pygame_easy_gui.utils.argument_verifier import Verify, ArgumentVerifier, ANY
+from pygame_easy_gui.core.Signal import Signal
 
 
 class AttributeMixin:
     """Attributs personnalisés, comme Instance:SetAttribute dans Roblox.
 
-        obj.SetAttribute("Health", 100)
-        obj.GetAttribute("Health")           # 100
-        obj.SetAttribute("Health", None)     # supprime l'attribut (comme nil dans Roblox)
+        Obj.SetAttribute("Health", 100)
+        Obj.GetAttribute("Health")           # 100
+        Obj.SetAttribute("Health", None)     # supprime l'attribut (comme nil dans Roblox)
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._attributes : dict[str, object] = {}
-        self._attributeSignals : dict[str, Signal] = {}
-        self.AttributeChanged = Signal()     # Fire(name) à chaque modification d'un attribut
+        self._Attributes : dict[str, object] = {}
+        self._AttributeSignals : dict[str, Signal] = {}
+        self.AttributeChanged = Signal()     # Fire(Name) à chaque modification d'un attribut
 
     @Verify(ArgumentVerifier([str, ANY], 2))
-    def SetAttribute(self, name : str, value):
-        if value is None:
-            if name not in self._attributes:
+    def SetAttribute(self, Name : str, Value):
+        if Value is None:
+            if Name not in self._Attributes:
                 return
-            del self._attributes[name]
+            del self._Attributes[Name]
         else:
-            if name in self._attributes and self._attributes[name] == value:
+            if Name in self._Attributes and self._Attributes[Name] == Value:
                 return  # valeur identique : pas de signal
-            self._attributes[name] = value
-        self._FireAttributeChanged(name)
+            self._Attributes[Name] = Value
+        self._FireAttributeChanged(Name)
 
     @Verify(ArgumentVerifier([str], 1))
-    def GetAttribute(self, name : str):
-        return self._attributes.get(name, None)
+    def GetAttribute(self, Name : str):
+        return self._Attributes.get(Name, None)
 
     def GetAttributes(self) -> dict[str, object]:
-        return dict(self._attributes)
+        return dict(self._Attributes)
 
     @Verify(ArgumentVerifier([str], 1))
-    def HasAttribute(self, name : str):
-        return name in self._attributes
+    def HasAttribute(self, Name : str):
+        return Name in self._Attributes
 
     @Verify(ArgumentVerifier([str], 1))
-    def DelAttribute(self, name : str):
-        self.SetAttribute(name, None)
+    def DelAttribute(self, Name : str):
+        self.SetAttribute(Name, None)
 
     @Verify(ArgumentVerifier([str], 1))
-    def GetAttributeChangedSignal(self, name : str) -> Signal:
-        """Signal émis uniquement quand l'attribut `name` change (sans argument)."""
-        if name not in self._attributeSignals:
-            self._attributeSignals[name] = Signal()
-        return self._attributeSignals[name]
+    def GetAttributeChangedSignal(self, Name : str) -> Signal:
+        """Signal émis uniquement quand l'attribut Name change (sans argument)."""
+        if Name not in self._AttributeSignals:
+            self._AttributeSignals[Name] = Signal()
+        return self._AttributeSignals[Name]
 
-    def _FireAttributeChanged(self, name : str):
-        self.AttributeChanged.Fire(name)
-        if name in self._attributeSignals:
-            self._attributeSignals[name].Fire()
+    def _FireAttributeChanged(self, Name : str):
+        self.AttributeChanged.Fire(Name)
+        if Name in self._AttributeSignals:
+            self._AttributeSignals[Name].Fire()

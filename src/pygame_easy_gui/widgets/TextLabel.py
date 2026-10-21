@@ -1,59 +1,128 @@
+from pygame_easy_gui.core.GuiObject import GuiObject
+from pygame_easy_gui.datatypes.vector2 import Vector2
+from pygame_easy_gui.core.Signal import Signal
+from pygame_easy_gui.components.UITextSizeConstraint import UITextSizeConstraint
+from pygame_easy_gui.render import Text as TextRender
+from pygame_easy_gui.render import Display
 import pygame
 
-from ..core.GuiObject import GuiObject
-from ..core.Property import Property
-from ..datatypes import Color3
-
-DEFAULT_TEXT_LABEL_WIDGETS_NAME = "TextLabel"
 
 class TextLabel(GuiObject):
-    _font_cache = {}
-
-    Text = Property("Label", draw=True)
-    TextColor3 = Property(Color3(0, 0, 0))
-    TextSize = Property(20, draw=True)
-    FontName = Property(None, draw=True)
-    BackgroundColor3 = Property(Color3(255, 255, 255), draw=True)
-    BackgroundTransparency = Property(0.0, draw=True)  # 0 = opaque, 1 = invisible
-    TextXAlignement = Property("center", draw=True)    # "left", "center", "right"
-    TextYAlignement = Property("center", draw=True)    # "top", "center", "bottom"
-
     def __init__(self):
         super().__init__()
-        self.Name = DEFAULT_TEXT_LABEL_WIDGETS_NAME
+        self.TextChanged = Signal()   # (NouveauTexte)
+        self._Text = ""
 
-    def _GetFont(self) -> pygame.font.Font:
-        key = (self.FontName, self.TextSize)
-        if key not in TextLabel._font_cache:
-            TextLabel._font_cache[key] = pygame.font.Font(self.FontName, self.TextSize)
-        return TextLabel._font_cache[key]
+        self.Name = "TextLabel"
+        self.Text = "Label"
+        self.TextColor3 = (0, 0, 0)
+        self.TextSize = 20
+        self.TextTransparency = 0.0
+        self.FontName = None             # None = police par défaut de pygame, sinon chemin vers un .ttf
+        self.BackgroundColor3 = (255,255,255)
+        self.BackgroundTransparency = 0
+        self.TextXAlignment = "center"   # "left" | "center" | "right"
+        self.TextYAlignment = "center"   # "top" | "center" | "bottom"
+        self.TextWrapped = False         # retour à la ligne automatique
+        self.TextTruncate = "none"       # "none" | "atend" (ajoute "..." si le texte dépasse)
+        self.TextScaled = False          # taille de police auto pour remplir l'objet (voir UITextSizeConstraint)
+
+        self._TextCacheKey = None
+        self._TextCacheSurface = None
+
+    @property
+    def Text(self) -> str:
+        return self._Text
+
+    @Text.setter
+    def Text(self, Value : str):
+        Value = str(Value)
+        if Value == self._Text:
+            return
+        self._Text = Value
+        self.TextChanged.Fire(Value)
+
+    def _GetFont(self, Size : int | None = None) -> pygame.font.Font:
+        return TextRender.GetFont(self.FontName, Size or self.TextSize)
+
+    def _GetTextSizeLimits(self) -> tuple[int, int]:
+        Constraint = self.GetComponent(UITextSizeConstraint)
+        if Constraint is None:
+            return 1, 100
+        return Constraint.MinTextSize, Constraint.MaxTextSize
+
+    def _GetTextSurface(self, Rect : pygame.Rect) -> pygame.Surface:
+        """Rendu du texte mis en cache : il n'est recalculé que si une propriété du texte ou la taille change"""
+        Key = (
+            self.Text, self.FontName, self.TextSize, tuple(self.TextColor3), self.TextTransparency,
+            self.TextXAlignment, self.TextWrapped, self.TextTruncate, self.TextScaled,
+            Rect.size, self._GetTextSizeLimits() if self.TextScaled else None,
+        )
+        if Key == self._TextCacheKey:
+            return self._TextCacheSurface
+
+        Size = self.TextSize
+        if self.TextScaled:
+            MinSize, MaxSize = self._GetTextSizeLimits()
+            Size = TextRender.FindScaledSize(self.FontName, self.Text, Rect.width, Rect.height, self.TextWrapped, MinSize, MaxSize)
+
+        Font = self._GetFont(Size)
+        Lines = TextRender.LayoutLines(Font, self.Text, Rect.width, Rect.height, self.TextWrapped, self.TextTruncate.lower())
+        Surf = TextRender.RenderLines(Font, Lines, self.TextColor3, self.TextXAlignment.lower())
+        Surf = Display.Optimize(Surf)
+        if self.TextTransparency > 0:
+            Surf.set_alpha(int((1.0 - self.TextTransparency) * 255))
+
+        self._TextCacheKey = Key
+        self._TextCacheSurface = Surf
+        return Surf
+
+    def _GetTextArea(self) -> pygame.Rect:
+        """Zone dans laquelle le texte est aligné"""
+        return self._GetPaddedRect()
+
+    def _GetTextRect(self, Area : pygame.Rect) -> tuple[pygame.Surface, pygame.Rect]:
+        """Surface du texte et position où la coller (le texte peut dépasser de Area s'il n'est ni coupé ni retourné à la ligne)"""
+        TextSurf = self._GetTextSurface(Area)
+        TextRect = TextSurf.get_rect()
+
+        XAlignment = self.TextXAlignment.lower()
+        if XAlignment == "left":
+            TextRect.left = Area.left
+        elif XAlignment == "right":
+            TextRect.right = Area.right
+        else:
+            TextRect.centerx = Area.centerx
+
+        YAlignment = self.TextYAlignment.lower()
+        if YAlignment == "top":
+            TextRect.top = Area.top
+        elif YAlignment == "bottom":
+            TextRect.bottom = Area.bottom
+        else:
+            TextRect.centery = Area.centery
+        return TextSurf, TextRect
+
+    @property
+    def TextBounds(self) -> Vector2:
+        """Taille en pixels du texte affiché"""
+        Surf = self._GetTextSurface(self._GetTextArea())
+        return Vector2(Surf.get_width(), Surf.get_height())
+
+    def _HasVisibleText(self) -> bool:
+        return bool(self.Text) and self.TextTransparency < 1.0
+
+    def _GetDrawBounds(self) -> pygame.Rect:
+        Bounds = super()._GetDrawBounds()
+        if self._HasVisibleText():
+            Bounds = Bounds.union(self._GetTextRect(self._GetTextArea())[1])
+        return Bounds
+
+    def _DrawText(self, Surface : pygame.Surface):
+        if self._HasVisibleText():
+            TextSurf, TextRect = self._GetTextRect(self._GetTextArea())
+            Surface.blit(TextSurf, TextRect)
 
     def _Draw(self, Surface: pygame.Surface):
-        rect = self.GetRect()
-
-        if self.BackgroundTransparency < 1.0:
-            alpha = int((1.0 - self.BackgroundTransparency) * 255)
-            temp = pygame.Surface(rect.size, pygame.SRCALPHA)
-            temp.fill((*self.BackgroundColor3.ToPygame(), alpha))
-            Surface.blit(temp, rect.topleft)
-
-        font = self._GetFont()
-        textSurf = font.render(self.Text, True, self.TextColor3.ToPygame())
-        textRect = textSurf.get_rect()
-
-        # Un axe à la fois : l'alignement vertical ne doit pas écraser l'horizontal
-        if self.TextXAlignement == "left":
-            textRect.left = rect.left
-        elif self.TextXAlignement == "right":
-            textRect.right = rect.right
-        else:
-            textRect.centerx = rect.centerx
-
-        if self.TextYAlignement == "top":
-            textRect.top = rect.top
-        elif self.TextYAlignement == "bottom":
-            textRect.bottom = rect.bottom
-        else:
-            textRect.centery = rect.centery
-
-        Surface.blit(textSurf, textRect)
+        self._DrawBackground(Surface)
+        self._DrawText(Surface)

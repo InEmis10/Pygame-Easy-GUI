@@ -1,52 +1,56 @@
+import traceback
 
-##Create a connexion
+
 class Connection:
-    def __init__(self, signal: "Signal", callback):
-        self._signal = signal
-        self._callback = callback
+    def __init__(self, Signal: "Signal", Callback):
+        self._Signal = Signal
+        self._Callback = Callback
         self.Connected = True
 
     def Disconnect(self):
         if self.Connected:
             self.Connected = False
-            if self in self._signal._connections:
-                self._signal._connections.remove(self)
+            if self in self._Signal._Connections:
+                self._Signal._Connections.remove(self)
 
     def __call__(self, *args, **kwargs):
-        # Après `@signal.Connect` (ou `@signal`), le nom de la fonction désigne la Connection :
+        # Après `@Signal.Connect` (ou `@Signal`), le nom de la fonction désigne la Connection :
         # elle reste appelable comme la fonction d'origine.
-        return self._callback(*args, **kwargs)
+        return self._Callback(*args, **kwargs)
 
-##Create a signal
+
 class Signal:
     def __init__(self):
-        self._connections: list[Connection] = []
+        self._Connections: list[Connection] = []
 
-    def Connect(self, callback) -> Connection:
-        conn = Connection(self, callback)
-        self._connections.append(conn)
-        return conn
+    def Connect(self, Callback) -> Connection:
+        Conn = Connection(self, Callback)
+        self._Connections.append(Conn)
+        return Conn
 
-    def Once(self, callback) -> Connection:
-        holder = {}
+    def Once(self, Callback) -> Connection:
+        Holder = {}
 
-        def wrapper(*args, **kwargs):
-            holder["conn"].Disconnect()
-            callback(*args, **kwargs)
+        def Wrapper(*args, **kwargs):
+            Holder["Conn"].Disconnect()
+            Callback(*args, **kwargs)
 
-        conn = self.Connect(wrapper)
-        holder["conn"] = conn
-        return conn
+        Conn = self.Connect(Wrapper)
+        Holder["Conn"] = Conn
+        return Conn
 
     def Fire(self, *args, **kwargs):
-        for conn in list(self._connections):
-            if conn.Connected:
-                conn._callback(*args, **kwargs)
+        # Une erreur dans un callback est affichée mais n'empêche pas les suivants de s'exécuter
+        for Conn in list(self._Connections):
+            if Conn.Connected:
+                try:
+                    Conn._Callback(*args, **kwargs)
+                except Exception:
+                    traceback.print_exc()
 
     def DisconnectAll(self):
-        for conn in list(self._connections):
-            conn.Disconnect()
+        for Conn in list(self._Connections):
+            Conn.Disconnect()
 
-    def __call__(self, callback) -> Connection:
-        """Permet d'utiliser le signal comme décorateur : @button.MouseButton1Click"""
-        return self.Connect(callback)
+    def __call__(self, Callback):
+        return self.Connect(Callback)

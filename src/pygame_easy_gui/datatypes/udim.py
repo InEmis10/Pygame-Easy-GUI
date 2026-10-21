@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..utils.argument_verifier import ArgumentVerifier, NUMBER, Verify
+from pygame_easy_gui.utils.argument_verifier import ArgumentVerifier, NUMBER, Verify
 
 
 DEBUG = True
@@ -10,56 +10,53 @@ CONFIG_UDIM_DEFAULT_OFFSET = 0.0
 UDIM_VERIFIER = ArgumentVerifier([NUMBER, NUMBER], 2)
 
 class Udim:
+    """Immuable : pour changer une valeur, créer un nouveau Udim (sinon le GuiObject ne peut pas se marquer dirty)"""
+    __slots__ = ("Scale", "Offset")
+
     @Verify(UDIM_VERIFIER)
     def __init__(self, Scale : float | int = CONFIG_UDIM_DEFAULT_SCALE, Offset : float | int = CONFIG_UDIM_DEFAULT_OFFSET):
-        self.Scale = Scale
-        self.Offset = Offset
+        object.__setattr__(self, "Scale", Scale)
+        object.__setattr__(self, "Offset", Offset)
 
-    @Verify(ArgumentVerifier([NUMBER], 1))
-    def setScale(self, newScale : float | int) -> (float | int) | None:
-        self.Scale = newScale
-        return self.Scale
-
-    @Verify(ArgumentVerifier([NUMBER], 1))
-    def setOffset(self, newOffset : float | int) -> (float | int) | None:
-        self.Offset = newOffset
-        return self.Offset
+    def __setattr__(self, Name, Value):
+        raise AttributeError("Udim est immuable, crée un nouveau Udim à la place")
 
     @Verify(ArgumentVerifier([lambda: Udim, NUMBER], 2))
-    def lerp(self, other: Udim, alpha: float | int) -> Udim:
+    def lerp(self, Other: Udim, Alpha: float | int) -> Udim:
         return Udim(
-            self.Scale + (other.Scale - self.Scale) * alpha,
-            self.Offset + (other.Offset - self.Offset) * alpha
+            self.Scale + (Other.Scale - self.Scale) * Alpha,
+            self.Offset + (Other.Offset - self.Offset) * Alpha
         )
 
     @Verify(ArgumentVerifier([lambda: Udim], 1))
-    def __add__(self, other : Udim):
+    def __add__(self, Other : Udim):
         return Udim(
-            self.Scale + other.Scale,
-            self.Offset + other.Offset
+            self.Scale + Other.Scale,
+            self.Offset + Other.Offset
         )
 
     @Verify(ArgumentVerifier([lambda: Udim], 1))
-    def __sub__(self, other : Udim):
+    def __sub__(self, Other : Udim):
         return Udim(
-            self.Scale - other.Scale,
-            self.Offset - other.Offset
+            self.Scale - Other.Scale,
+            self.Offset - Other.Offset
         )
 
-    @Verify(ArgumentVerifier([lambda: Udim], 1))
-    def __eq__(self, other : Udim):
-        return self.__key() == other.__key()
+    def __eq__(self, Other : Udim):
+        if not isinstance(Other, Udim):
+            return NotImplemented
+        return self.__key() == Other.__key()
 
     def __neg__(self):
         return Udim(-self.Scale, -self.Offset)
 
     @Verify(ArgumentVerifier([NUMBER], 1))
-    def __mul__(self, scalar: float | int):
-        return Udim(self.Scale * scalar, self.Offset * scalar)
+    def __mul__(self, Scalar: float | int):
+        return Udim(self.Scale * Scalar, self.Offset * Scalar)
 
     @Verify(ArgumentVerifier([NUMBER], 1))
-    def __rmul__(self, scalar: float | int):
-        return self.__mul__(scalar)
+    def __rmul__(self, Scalar: float | int):
+        return self.__mul__(Scalar)
 
     def __iter__(self):
         return iter((self.Scale, self.Offset))
@@ -77,72 +74,77 @@ UDIM2_VERIFIER_1 = ArgumentVerifier([NUMBER, NUMBER, NUMBER, NUMBER], 4)
 UDIM2_VERIFIER_2 = ArgumentVerifier([Udim, Udim], 2)
 
 class Udim2:
-    def __init__(self, *args):
-        self.X : Udim = None
-        self.Y : Udim = None
+    """Immuable : pour changer une valeur, créer un nouveau Udim2 (sinon le GuiObject ne peut pas se marquer dirty)"""
+    __slots__ = ("X", "Y")
 
+    def __init__(self, *args):
         if len(args) == 4 and UDIM2_VERIFIER_1.Verifier(*args):
-            self.X = Udim(args[0], args[1])
-            self.Y  = Udim(args[2], args[3])
+            X = Udim(args[0], args[1])
+            Y = Udim(args[2], args[3])
         elif len(args) == 2 and UDIM2_VERIFIER_2.Verifier(*args):
-            self.X = args[0]
-            self.Y = args[1]
+            X, Y = args
         else:
             raise TypeError("Invalid arguments for Udim2")
 
-    @Verify(ArgumentVerifier([NUMBER, NUMBER], 2))
-    def fromOffset(self, offsetX : int | float, offsetY : int | float):
-        self.X.setOffset(offsetX)
-        self.Y.setOffset(offsetY)
+        object.__setattr__(self, "X", X)
+        object.__setattr__(self, "Y", Y)
 
+    def __setattr__(self, Name, Value):
+        raise AttributeError("Udim2 est immuable, crée un nouveau Udim2 à la place")
+
+    @classmethod
     @Verify(ArgumentVerifier([NUMBER, NUMBER], 2))
-    def fromScale(self, scaleX : int | float, scaleY : int | float):
-        self.X.setScale(scaleX)
-        self.Y.setScale(scaleY)
+    def fromOffset(cls, OffsetX : int | float, OffsetY : int | float) -> Udim2:
+        return cls(0, OffsetX, 0, OffsetY)
+
+    @classmethod
+    @Verify(ArgumentVerifier([NUMBER, NUMBER], 2))
+    def fromScale(cls, ScaleX : int | float, ScaleY : int | float) -> Udim2:
+        return cls(ScaleX, 0, ScaleY, 0)
 
     @Verify(ArgumentVerifier([lambda: Udim2, NUMBER], 2))
-    def Lerp(self, other : Udim2, alpha : int | float):
+    def Lerp(self, Other : Udim2, Alpha : int | float):
         return Udim2(
-            self.X.lerp(other.X, alpha),
-            self.Y.lerp(other.Y, alpha)
+            self.X.lerp(Other.X, Alpha),
+            self.Y.lerp(Other.Y, Alpha)
         )
     ##TODO -> Factoriser les add et sub avec la lib op (operator)
 
-    @Verify(ArgumentVerifier([lambda: Udim2], 1))
-    def __add__(self, other: Udim2):
-        if not isinstance(other, Udim2):
+    def __add__(self, Other: Udim2):
+        if not isinstance(Other, Udim2):
             return NotImplemented
         return Udim2(
-            self.X.Scale + other.X.Scale,
-            self.X.Offset + other.X.Offset,
-            self.Y.Scale + other.Y.Scale,
-            self.Y.Offset + other.Y.Offset
+            self.X.Scale + Other.X.Scale,
+            self.X.Offset + Other.X.Offset,
+            self.Y.Scale + Other.Y.Scale,
+            self.Y.Offset + Other.Y.Offset
         )
 
-    def __sub__(self, other: Udim2):
-        if not isinstance(other, Udim2):
+    def __sub__(self, Other: Udim2):
+        if not isinstance(Other, Udim2):
             return NotImplemented
         return Udim2(
-            self.X.Scale - other.X.Scale,
-            self.X.Offset - other.X.Offset,
-            self.Y.Scale - other.Y.Scale,
-            self.Y.Offset - other.Y.Offset
+            self.X.Scale - Other.X.Scale,
+            self.X.Offset - Other.X.Offset,
+            self.Y.Scale - Other.Y.Scale,
+            self.Y.Offset - Other.Y.Offset
         )
 
-    @Verify(ArgumentVerifier([lambda: Udim2], 1))
-    def __eq__(self, other: Udim2):
-        return self.__key() == other.__key()
+    def __eq__(self, Other: Udim2):
+        if not isinstance(Other, Udim2):
+            return NotImplemented
+        return self.__key() == Other.__key()
 
     def __neg__(self):
         return Udim2(-self.X, -self.Y)
 
     @Verify(ArgumentVerifier([NUMBER], 1))
-    def __mul__(self, scalar: float | int):
-        return Udim2(self.X * scalar, self.Y * scalar)
+    def __mul__(self, Scalar: float | int):
+        return Udim2(self.X * Scalar, self.Y * Scalar)
 
     @Verify(ArgumentVerifier([NUMBER], 1))
-    def __rmul__(self, scalar: float | int):
-        return self.__mul__(scalar)
+    def __rmul__(self, Scalar: float | int):
+        return self.__mul__(Scalar)
 
     def __key(self):
         return self.X, self.Y

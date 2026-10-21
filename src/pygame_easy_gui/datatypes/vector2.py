@@ -1,33 +1,41 @@
 from __future__ import annotations
 
-from ..utils.argument_verifier import ArgumentVerifier, Verify
+from pygame_easy_gui.utils.argument_verifier import *
 
 ##TODO: check if we need update methode, value change methode and more arithmetique methode !!!
 
 class Vector2:
+    """Immuable : pour changer une valeur, créer un nouveau Vector2 (sinon le GuiObject ne peut pas se marquer dirty)"""
+    __slots__ = ("X", "Y")
+
     def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
+        object.__setattr__(self, "X", X)
+        object.__setattr__(self, "Y", Y)
+
+    def __setattr__(self, Name, Value):
+        raise AttributeError("Vector2 est immuable, crée un nouveau Vector2 à la place")
 
     def _key(self):
         return self.X, self.Y
 
     @Verify(ArgumentVerifier([lambda: Vector2], 1))
-    def __sub__(self, other : Vector2):
+    def __sub__(self, Other : Vector2):
         return Vector2(
-            self.X - other.X,
-            self.Y - other.Y
+            self.X - Other.X,
+            self.Y - Other.Y
         )
 
     @Verify(ArgumentVerifier([lambda: Vector2], 1))
-    def __add__(self, other : Vector2):
+    def __add__(self, Other : Vector2):
         return Vector2(
-            self.X + other.X,
-            self.Y + other.Y
+            self.X + Other.X,
+            self.Y + Other.Y
         )
 
     def __hash__(self):
         return hash(self._key())
 
-    def __eq__(self, other : Vector2):
-        return self._key() == other._key()
+    def __eq__(self, Other : Vector2):
+        if not isinstance(Other, Vector2):
+            return NotImplemented
+        return self._key() == Other._key()
