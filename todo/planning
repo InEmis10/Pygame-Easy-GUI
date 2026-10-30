@@ -1,9 +1,9 @@
 IMPORTANT FEATURES:
 
-    1- Scrolling frame
-    2- Signal working + function attachment (see about attach using decorator)
-    3- Set up tag + collection service "like"
-    4- Make the main handler + initiator
+    1- Scrolling frame -> fait
+    2- Signal working + function attachment (see about attach using decorator) -> fait (@Connect, Connection appelable)
+    3- Set up tag + collection service "like" -> fait (AddTag, CollectionService)
+    4- Make the main handler + initiator -> fait (Application + EventManager)
 
 FEATURE CHECK LIST:
 
@@ -11,20 +11,28 @@ FEATURE CHECK LIST:
     COMPONENT:
 
     - Text Button -> 100%
-    - Image Button -> 0%
+    - Image Button -> 100%
+    - Image Text Button -> 100%
     - Text Label -> 100%
-    - Image Label -> 0%
+    - Image Label -> 100%
+    - Text Box -> 100% (sélection, copier / couper / coller désactivables)
     - Frame -> 100%
-    - Scrolling Frame -> 0%
+    - Scrolling Frame -> 100%
 
     OBJECT ATTRIBUTE:
-    - Ui_Corner
-    - Ui Grid Layout
-    - Ui List Layout
-    - Ui Size Constraint
-    - Ui Text Size Constraint
+    - Ui_Corner -> fait
+    - Ui Grid Layout -> fait (StartCorner, AbsoluteCellSize, AbsoluteCellCount)
+    - Ui List Layout -> fait (Wraps)
+    - Ui Size Constraint -> fait
+    - Ui Text Size Constraint -> fait
+    - Ui Padding, Ui Stroke, Ui Gradient -> fait
 
     OTHER:
+    - TweenService -> fait
+    - GetPropertyChangedSignal / Changed -> fait
+    - Optimisation -> rendu par zones (dirty rects), caches d'images / texte / dégradés
     - Think about more decorator methode
-    - See about optimisation
+    - Timer / Delay() -> fait (TimeService.Delay / Every, V1.0.0)
+    - UserInputService + InputObject (voir todo/inputs, l'EventManager actuel couvre souris / clavier / focus)
+      -> retiré de la V1 (InputObject, UserInputType, UserInputStates étaient inutilisés) : à refaire en V1.1
     - Debug trace system : logging par module (getLogger(__name__) + NullHandler), SetDebug(), décorateur @Debug pour tracer les appels, log.exception dans les callbacks, branché sur le mode Debug (F12)

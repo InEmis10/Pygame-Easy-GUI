@@ -1,5 +1,10 @@
-from .color3 import Color3
-from .udim import Udim, Udim2
-from .vector2 import Vector2
+from .Color3 import Color3
+from .Udim import Udim, Udim2
+from .Vector2 import Vector2
+from .Sequence import ColorSequence, ColorSequenceKeypoint, NumberSequence, NumberSequenceKeypoint
+from .IntValue import IntValue
 
-__all__ = ["Color3", "Udim", "Udim2", "Vector2"]
+__all__ = [
+    "Color3", "Udim", "Udim2", "Vector2",
+    "ColorSequence", "ColorSequenceKeypoint", "NumberSequence", "NumberSequenceKeypoint", "IntValue",
+]
