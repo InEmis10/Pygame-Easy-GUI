@@ -1,5 +1,5 @@
 from pygame_easy_gui.core.GuiObject import GuiObject
-from pygame_easy_gui.datatypes.vector2 import Vector2
+from pygame_easy_gui.datatypes.Vector2 import Vector2
 from pygame_easy_gui.core.Signal import Signal
 from pygame_easy_gui.components.UITextSizeConstraint import UITextSizeConstraint
 from pygame_easy_gui.render import Text as TextRender

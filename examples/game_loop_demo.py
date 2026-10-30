@@ -89,13 +89,13 @@ def main():
     )
     Levels.AddChild(UIListLayout(Padding=Udim(0, 4)))
     Levels.AddChild(UIPadding(PaddingLeft=Udim(0, 4), PaddingRight=Udim(0, 12), PaddingTop=Udim(0, 4), PaddingBottom=Udim(0, 4)))
-    for Index in range(1, 16):
+    for i in range(1, 16):
         Level = TextButton.New(
             Levels,
-            Text=f"Niveau {Index}", TextColor3=(230, 230, 230), TextSize=20,
-            Size=Udim2(1, 0, 0, 32), BackgroundColor3=Color3(55, 55, 65), LayoutOrder=Index,
+            Text=f"Niveau {i}", TextColor3=(230, 230, 230), TextSize=20,
+            Size=Udim2(1, 0, 0, 32), BackgroundColor3=Color3(55, 55, 65), LayoutOrder=i,
         )
-        Level.MouseButton1Click.Connect(lambda Index=Index: print(f"Niveau {Index} choisi"))
+        Level.MouseButton1Click.Connect(lambda Index=i: print(f"Niveau {Index} choisi"))
 
     Mover = Rect(Color=(50, 200, 50))
     Mover.Name = "Mover"
@@ -106,8 +106,6 @@ def main():
     Running = True
     while Running:
         Dt = Clock.tick(60) / 1000.0
-
-        # La GUI consomme ce qui la concerne (clics sur un bouton, frappe dans la TextBox...)
         Events = Gui.HandleEvents(pygame.event.get())
 
         for Event in Events:

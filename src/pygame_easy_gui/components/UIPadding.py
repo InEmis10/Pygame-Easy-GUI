@@ -1,5 +1,5 @@
 import pygame
-from pygame_easy_gui.datatypes.udim import Udim
+from pygame_easy_gui.datatypes.Udim import Udim
 from pygame_easy_gui.components.UIComponent import UIComponent
 
 

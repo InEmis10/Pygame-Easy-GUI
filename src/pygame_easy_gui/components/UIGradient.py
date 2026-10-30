@@ -1,8 +1,8 @@
 from collections import OrderedDict
 import math
 import pygame
-from pygame_easy_gui.datatypes.vector2 import Vector2
-from pygame_easy_gui.datatypes.sequence import ColorSequence, NumberSequence
+from pygame_easy_gui.datatypes.Vector2 import Vector2
+from pygame_easy_gui.datatypes.Sequence import ColorSequence, NumberSequence
 from pygame_easy_gui.components.UIComponent import UIComponent
 from pygame_easy_gui.render import Display
 

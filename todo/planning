@@ -32,6 +32,7 @@ FEATURE CHECK LIST:
     - GetPropertyChangedSignal / Changed -> fait
     - Optimisation -> rendu par zones (dirty rects), caches d'images / texte / dégradés
     - Think about more decorator methode
-    - Timer / Delay() (utils/Timer.py commencé)
+    - Timer / Delay() -> fait (TimeService.Delay / Every, V1.0.0)
     - UserInputService + InputObject (voir todo/inputs, l'EventManager actuel couvre souris / clavier / focus)
+      -> retiré de la V1 (InputObject, UserInputType, UserInputStates étaient inutilisés) : à refaire en V1.1
     - Debug trace system : logging par module (getLogger(__name__) + NullHandler), SetDebug(), décorateur @Debug pour tracer les appels, log.exception dans les callbacks, branché sur le mode Debug (F12)

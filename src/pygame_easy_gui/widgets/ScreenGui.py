@@ -1,8 +1,9 @@
 import pygame
 from pygame_easy_gui.core.GuiObject import GuiObject
-from pygame_easy_gui.datatypes.udim import Udim2
+from pygame_easy_gui.datatypes.Udim import Udim2
 from pygame_easy_gui.core.EventManager import EventManager
 from pygame_easy_gui.services.TweenService import TweenService
+from pygame_easy_gui.services.TimeService import TimeService
 from pygame_easy_gui.render import Display
 
 MAX_DIRTY_RECTS = 24          # au-delà, les zones sont fusionnées en une seule
@@ -144,8 +145,9 @@ class ScreenGui(GuiObject):
         return self.EventManager.FocusedObject
 
     def Update(self, Dt : float):
-        # Les tweens tournent même si cette GUI est désactivée (ils peuvent animer d'autres objets)
+        # Tweens et timers tournent même si cette GUI est désactivée (ils peuvent agir sur d'autres objets)
         TweenService.Step()
+        TimeService.Step()
         if self.Enabled:
             self._CheckScreenSize()
             super().Update(Dt)

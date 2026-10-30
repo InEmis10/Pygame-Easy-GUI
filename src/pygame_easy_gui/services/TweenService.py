@@ -1,8 +1,8 @@
 import time
 from pygame_easy_gui.core.Signal import Signal
-from pygame_easy_gui.datatypes.udim import Udim, Udim2
-from pygame_easy_gui.datatypes.vector2 import Vector2
-from pygame_easy_gui.datatypes.color3 import Color3
+from pygame_easy_gui.datatypes.Udim import Udim, Udim2
+from pygame_easy_gui.datatypes.Vector2 import Vector2
+from pygame_easy_gui.datatypes.Color3 import Color3
 from pygame_easy_gui.services import Easing
 
 

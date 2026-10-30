@@ -7,19 +7,50 @@ Des interfaces **pygame** à la manière de Roblox : positions en `Udim2` (éche
 - Modificateurs : `UIListLayout`, `UIGridLayout`, `UIPadding`, `UICorner`, `UIStroke`, `UIGradient`, `UISizeConstraint`, `UITextSizeConstraint`
 - Événements : survol, clics gauche / droit, molette, focus clavier, blocage des clics par les objets du dessus
 - Animations : `TweenService` / `TweenInfo`
+- Minuteurs : `TimeService.Delay` / `TimeService.Every`
 - Signaux de changement : `Changed`, `GetPropertyChangedSignal("Text")`
 - Tags (`AddTag` + `CollectionService`), attributs (`SetAttribute`), `Color3`, `ColorSequence`, `NumberSequence`, `IntValue`
 
 Nécessite **Python 3.10+** et **pygame-ce 2.5+**.
 
-## Installation (développement)
+## Installation
+
+Dans le projet qui utilise la lib (un tool, un jeu...), avec son environnement virtuel activé :
 
 ```sh
-./init.sh                                   # crée .venv (Python via uv) et installe la lib en mode éditable
+# Depuis GitHub, figé sur une version (recommandé)
+pip install "pygame-easy-gui @ git+https://github.com/InEmis10/Pygame-Easy-GUI.git@v1.0.0"
+
+# Depuis le dossier local, en éditable : les modifications de la lib sont visibles tout de suite
+pip install -e ~/Pygame-Easy-GUI
+```
+
+Pour le déclarer comme dépendance, dans le `requirements.txt` du projet :
+
+```text
+pygame-easy-gui @ git+https://github.com/InEmis10/Pygame-Easy-GUI.git@v1.0.0
+```
+
+ou dans son `pyproject.toml` : `dependencies = ["pygame-easy-gui @ git+https://github.com/InEmis10/Pygame-Easy-GUI.git@v1.0.0"]`.
+
+`pygame-ce` est installé automatiquement. Ne pas installer `pygame` en plus : les deux occupent le même module `pygame`.
+
+```python
+import pygame_easy_gui
+print(pygame_easy_gui.__version__)   # 1.0.0
+```
+
+## Développement
+
+```sh
+./init.sh                                   # crée .venv (uv si présent, sinon python3 -m venv), installe la lib en éditable + pytest
+.venv/bin/python -m pytest                  # lance les tests
 .venv/bin/python examples/property_demo.py  # lance une démo
 ```
 
-Ou avec pip : `pip install -e ".[dev]"` (le `[dev]` ajoute pytest).
+Ou à la main : `pip install -e ".[dev]"` (le `[dev]` ajoute pytest).
+
+Nouvelle version : changer `__version__` dans `src/pygame_easy_gui/__init__.py` (seul endroit où elle est écrite), compléter `CHANGELOG.md`, puis `git tag vX.Y.Z && git push --tags`.
 
 ## Application
 
@@ -177,6 +208,22 @@ Tween.Play()   # Pause(), Cancel()
 - Un nouveau tween sur une propriété déjà animée annule l'ancien.
 - Les tweens avancent en temps réel, tout seuls avec `Application`, ou à chaque `Gui.Update(Dt)` dans une boucle maison. Sans `ScreenGui`, appeler `TweenService.Step()` à chaque frame.
 
+## Minuteurs (TimeService)
+
+```python
+from pygame_easy_gui import TimeService
+
+TimeService.Delay(2, print, "2 secondes plus tard")   # une fois : Delay(Seconds, Callback, *Args)
+Blink = TimeService.Every(0.5, Cursor.ToggleVisible)  # en boucle, toutes les 0.5 s
+Blink.Cancel()                                        # Blink.Active vaut alors False
+```
+
+- Les callbacks sont appelés dans la boucle principale (pas de thread) : ils peuvent modifier la GUI sans risque.
+- Avec `Application`, la boucle se réveille d'elle-même à l'échéance du prochain timer. Dans une boucle maison, `Gui.Update(Dt)` fait avancer les timers ; sans `ScreenGui`, appeler `TimeService.Step()` à chaque frame.
+- `Delay(0, ...)` appelle la fonction au prochain tour de boucle.
+- Si la boucle a été bloquée plusieurs périodes, un `Every` n'est appelé qu'une fois (pas de rafale), puis reprend son rythme.
+- Une erreur dans un callback est affichée sans arrêter les autres timers.
+
 ## Signaux de changement
 
 ```python
@@ -209,20 +256,16 @@ Pour un composant interactif : `self.Active = True`, puis les hooks `_OnMouseDow
 
 ```
 src/pygame_easy_gui/
-├── __init__.py   API publique (tout s'importe depuis pygame_easy_gui)
+├── __init__.py   API publique et __version__ (tout s'importe depuis pygame_easy_gui)
 ├── core/         Application, GuiObject (arbre, layout, rendu par zones), EventManager, Signal, mixins
 ├── datatypes/    Udim, Udim2, Vector2, Color3, ColorSequence, NumberSequence, IntValue
 ├── components/   UIPadding, UICorner, UIStroke, UIGradient, UIListLayout, UIGridLayout, contraintes
 ├── widgets/      Frame, ScrollingFrame, ScreenGui, TextLabel, TextButton, TextBox, ImageLabel, ImageButton...
-├── services/     TweenService, CollectionService, Clipboard
+├── services/     TweenService, TimeService, CollectionService, Clipboard
 ├── render/       dessin, caches d'images / de texte, surface de la fenêtre
 └── utils/        ArgumentVerifier
 examples/         scripts de démo (utilisent la lib comme un utilisateur)
-tests/            python -m pytest
+tests/            .venv/bin/python -m pytest
 ```
 
-## Tests
-
-```sh
-.venv/bin/python -m pytest
-```
+Les fichiers sont en PascalCase, au nom de la classe principale qu'ils contiennent (`widgets/TextBox.py` → `TextBox`, `datatypes/Udim.py` → `Udim` et `Udim2`).

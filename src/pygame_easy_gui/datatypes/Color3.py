@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import colorsys
-from pygame_easy_gui.utils.argument_verifier import ArgumentVerifier, NUMBER, Verify
+from pygame_easy_gui.utils.ArgumentVerifier import ArgumentVerifier, NUMBER, Verify
 
 
 class Color3(tuple):

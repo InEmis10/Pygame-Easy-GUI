@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pygame_easy_gui.utils.argument_verifier import *
+from pygame_easy_gui.utils.ArgumentVerifier import *
 
 ##TODO: check if we need update methode, value change methode and more arithmetique methode !!!
 

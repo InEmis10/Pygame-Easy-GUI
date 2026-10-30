@@ -1,7 +1,7 @@
 import math
 import pygame
-from pygame_easy_gui.datatypes.udim import Udim2
-from pygame_easy_gui.datatypes.vector2 import Vector2
+from pygame_easy_gui.datatypes.Udim import Udim2
+from pygame_easy_gui.datatypes.Vector2 import Vector2
 from pygame_easy_gui.components.UILayout import UILayout, AlignStart
 
 

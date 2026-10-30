@@ -1,10 +1,11 @@
 import pygame
-from pygame_easy_gui.datatypes.color3 import Color3
+from pygame_easy_gui.datatypes.Color3 import Color3
 from pygame_easy_gui.core.Signal import Signal
 from pygame_easy_gui.core.mixins.EventHandlerMixin import EventHandlerMixin
 from pygame_easy_gui.core.Decorators import OnEvent
 from pygame_easy_gui.render import Display
 from pygame_easy_gui.services.TweenService import TweenService
+from pygame_easy_gui.services.TimeService import TimeService
 
 CURSOR_BLINK_WAIT = 0.1   # attente max entre deux tours quand une TextBox a le focus (clignotement du curseur)
 
@@ -79,6 +80,7 @@ class _GuiService:
 
     def Update(self, Dt : float):
         TweenService.Step()
+        TimeService.Step()
         for Screen in self.GetScreens():
             Screen.Update(Dt)
 
@@ -263,12 +265,17 @@ class Application(EventHandlerMixin):
         self.AbsoluteSize = self.Surface.get_size()    # peut différer de Size (maximisée, plein écran…)
 
     def _GetWaitTime(self) -> float:
-        """Temps max d'attente d'un événement : 0 pendant une animation, court si un curseur clignote"""
+        """Temps max d'attente d'un événement : 0 pendant une animation, court si un curseur clignote,
+        jamais au-delà de l'échéance du prochain timer"""
         if TweenService.GetPlayingTweens():
             return 0.0
+        Wait = self.EventTimeOut
         if self.Gui.GetFocusedObject() is not None:
-            return min(self.EventTimeOut, CURSOR_BLINK_WAIT)
-        return self.EventTimeOut
+            Wait = min(Wait, CURSOR_BLINK_WAIT)
+        Deadline = TimeService.GetNextDeadline()
+        if Deadline is not None:
+            Wait = min(Wait, max(0.0, Deadline - TimeService.Clock()))
+        return Wait
 
     def _GetEvents(self, Delay : float) -> list:
         """Delay en secondes : attend au plus Delay qu'un événement arrive (0 = n'attend pas)"""

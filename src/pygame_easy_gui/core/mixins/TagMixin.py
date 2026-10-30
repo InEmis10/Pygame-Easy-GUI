@@ -1,4 +1,4 @@
-from pygame_easy_gui.utils.argument_verifier import Verify, ArgumentVerifier
+from pygame_easy_gui.utils.ArgumentVerifier import Verify, ArgumentVerifier
 from pygame_easy_gui.services.CollectionService import CollectionService
 
 

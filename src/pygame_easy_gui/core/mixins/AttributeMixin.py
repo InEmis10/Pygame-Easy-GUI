@@ -1,4 +1,4 @@
-from pygame_easy_gui.utils.argument_verifier import Verify, ArgumentVerifier, ANY
+from pygame_easy_gui.utils.ArgumentVerifier import Verify, ArgumentVerifier, ANY
 from pygame_easy_gui.core.Signal import Signal
 
 

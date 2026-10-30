@@ -1,4 +1,4 @@
-from .attribute_mixin import AttributeMixin
+from .AttributeMixin import AttributeMixin
 from .EventHandlerMixin import EventHandlerMixin
 from .TagMixin import TagMixin
 from .InputMixin import InputMixin

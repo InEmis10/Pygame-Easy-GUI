@@ -1,9 +1,9 @@
-from pygame_easy_gui.datatypes.udim import Udim2
-from pygame_easy_gui.datatypes.vector2 import Vector2
+from pygame_easy_gui.datatypes.Udim import Udim2
+from pygame_easy_gui.datatypes.Vector2 import Vector2
 from pygame_easy_gui.core.Signal import Signal
 import pygame
 
-from pygame_easy_gui.core.mixins.attribute_mixin import AttributeMixin
+from pygame_easy_gui.core.mixins.AttributeMixin import AttributeMixin
 from pygame_easy_gui.core.mixins.TagMixin import TagMixin
 from pygame_easy_gui.core.mixins.InputMixin import InputMixin
 from pygame_easy_gui.components.UIComponent import UIComponent
