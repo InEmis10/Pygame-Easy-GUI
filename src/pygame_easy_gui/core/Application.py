@@ -6,6 +6,7 @@ from pygame_easy_gui.core.Decorators import OnEvent
 from pygame_easy_gui.render import Display
 from pygame_easy_gui.services.TweenService import TweenService
 from pygame_easy_gui.services.TimeService import TimeService
+from pygame_easy_gui.services.UserInputService import UserInputService
 
 CURSOR_BLINK_WAIT = 0.1   # attente max entre deux tours quand une TextBox a le focus (clignotement du curseur)
 
@@ -174,6 +175,7 @@ class Application(EventHandlerMixin):
         # ---- Interface
         self.AbsoluteSize : tuple[int, int] = self.Size      # taille réelle, mise à jour par _OnResize
         self.Gui = _GuiService()                             # MyApp.Gui.Add(ScreenGui)
+        self.UserInputService = UserInputService             # MyApp.UserInputService.InputBegan.Connect(...)
 
         # ---- Signaux
         self.Resized = Signal()          # (Taille)
@@ -289,7 +291,9 @@ class Application(EventHandlerMixin):
         Events = self._GetEvents(self._GetWaitTime())
         for Event in Events:
             self._HandleEvent(Event)
-        for Event in self.Gui.HandleEvents(Events):
+        Remaining = self.Gui.HandleEvents(Events)
+        UserInputService._Process(Events, Remaining)
+        for Event in Remaining:
             self.UnhandledEvent.Fire(Event)
 
         Dt = self.Clock.tick(self.MaxFPS) / 1000

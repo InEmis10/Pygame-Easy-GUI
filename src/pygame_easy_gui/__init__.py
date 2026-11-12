@@ -11,7 +11,8 @@ from .components import (UIComponent, UIPadding, UICorner, UIStroke, UIGradient,
                          UISizeConstraint, UITextSizeConstraint)
 from .widgets import (Frame, ScrollingFrame, ScreenGui, TextLabel, ImageLabel, ButtonMixin, TextButton,
                       ImageButton, ImageTextButton, TextBox)
-from .services import CollectionService, TweenService, TweenInfo, Tween, TimeService, Timer, Clipboard
+from .services import (CollectionService, TweenService, TweenInfo, Tween, TimeService, Timer, Clipboard,
+                       UserInputService, InputObject, KeyCode, UserInputType, UserInputState)
 
 __all__ = [
     "Color3", "Udim", "Udim2", "Vector2", "ColorSequence", "ColorSequenceKeypoint",
@@ -23,5 +24,6 @@ __all__ = [
     "Frame", "ScrollingFrame", "ScreenGui", "TextLabel", "ImageLabel", "ButtonMixin",
     "TextButton", "ImageButton", "ImageTextButton", "TextBox",
     "CollectionService", "TweenService", "TweenInfo", "Tween", "TimeService", "Timer", "Clipboard",
+    "UserInputService", "InputObject", "KeyCode", "UserInputType", "UserInputState",
 ]
 __version__ = "1.0.0"
